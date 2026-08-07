@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Anam AI</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101010;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      padding: 25px 18px;
+    }
+
+    .title {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .title h1 {
+      font-size: 38px;
+      margin: 0;
+      letter-spacing: 2px;
+    }
+
+    .title p {
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    #chat {
+      margin-top: 30px;
+      min-height: 300px;
+      max-height: 55vh;
+      padding: 15px;
+      border-radius: 18px;
+      background: #1b1b1b;
+      overflow-y: auto;
+    }
+
+    .message {
+      padding: 12px 15px;
+      margin: 10px 0;
+      border-radius: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .anam {
+      background: #292929;
+    }
+
+    .user {
+      background: #3b3b3b;
+      text-align: right;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    #textInput {
+      flex: 1;
+      min-width: 0;
+      padding: 15px;
+      border: none;
+      outline: none;
+      border-radius: 15px;
+      background: #222;
+      color: white;
+      font-size: 16px;
+    }
+
+    #send {
+      width: 55px;
+      border: none;
+      border-radius: 15px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    #mic {
+      display: block;
+      margin: 22px auto 0;
+      width: 75px;
+      height: 75px;
+      border: none;
+      border-radius: 50%;
+      font-size: 32px;
+      cursor: pointer;
+    }
+
+    #mic.listening {
+      transform: scale(1.08);
+    }
+
+    #status {
+      text-align: center;
+      color: #aaa;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="title">
+    <h1>ANAM AI</h1>
+    <p>Your personal AI assistant</p>
+  </div>
+
+  <div id="chat">
+
+    <div class="message anam">
+      👋 Hello! Main Anam AI hoon.<br>
+      Mujhse baat karo.
+    </div>
+
+  </div>
+
+  <div class="controls">
+
+    <input
+      id="textInput"
+      type="text"
+      placeholder="Kuch likho..."
+      autocomplete="off"
+    >
+
+    <button id="send" type="button">➤</button>
+
+  </div>
+
+  <button id="mic" type="button">🎙️</button>
+
+  <div id="status">
+    Microphone dabakar bolo
+  </div>
+
+</div>
+
+
+<script>
+
+const chat = document.getElementById("chat");
+const input = document.getElementById("textInput");
+const send = document.getElementById("send");
+const mic = document.getElementById("mic");
+const status = document.getElementById("status");
+
+
+// ===============================
+// MESSAGE
+// ===============================
+
+function addMessage(text, type) {
+
+  const message = document.createElement("div");
+
+  message.className = "message " + type;
+
+  message.innerText = text;
+
+  chat.appendChild(message);
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+
+// ===============================
+// VOICE OUTPUT
+// ===============================
+
+function speak(text) {
+
+  if (!("speechSynthesis" in window)) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const voice =
+    new SpeechSynthesisUtterance(text);
+
+  voice.lang = "hi-IN";
+  voice.rate = 0.95;
+  voice.pitch = 1;
+  voice.volume = 1;
+
+  voice.onstart = function() {
+    status.innerText =
+      "🔊 Anam AI bol raha hai...";
+  };
+
+  voice.onend = function() {
+    status.innerText =
+      "Microphone dabakar bolo";
+  };
+
+  window.speechSynthesis.speak(voice);
+}
+
+
+// ===============================
+// CALCULATOR
+// ===============================
+
+function calculate(text) {
+
+  let expression = text
+    .toLowerCase()
+    .replace(/kitne hote hain/g, "")
+    .replace(/kitna hota hai/g, "")
+    .replace(/kya hoga/g, "")
+    .replace(/hota hai/g, "")
+    .replace(/hai/g, "")
+    .replace(/=/g, "")
+    .replace(/plus/g, "+")
+    .replace(/minus/g, "-")
+    .replace(/into/g, "*")
+    .replace(/multiply/g, "*")
+    .replace(/divided by/g, "/")
+    .replace(/divide/g, "/")
+    .replace(/×/g, "*")
+    .replace(/÷/g, "/")
+    .trim();
+
+  // Hindi numbers
+  expression = expression
+    .replace(/do/g, "2")
+    .replace(/teen/g, "3")
+    .replace(/char/g, "4")
+    .replace(/chaar/g, "4")
+    .replace(/paanch/g, "5")
+    .replace(/cheh/g, "6")
+    .replace(/chhe/g, "6")
+    .replace(/saat/g, "7")
+    .replace(/aath/g, "8")
+    .replace(/nau/g, "9")
+    .replace(/das/g, "10");
+
+  // Only allow numbers and maths operators
+  if (!/^[0-9+\-*/().\s]+$/.test(expression)) {
+    return null;
+  }
+
+  try {
+
+    const result =
+      Function(
+        '"use strict"; return (' +
+        expression +
+        ')'
+      )();
+
+    if (
+      typeof result === "number" &&
+      Number.isFinite(result)
+    ) {
+
+      return "🤖 " + result;
+
+    }
+
+  } catch (error) {
+
+    return null;
+
+  }
+
+  return null;
+}
+
+
+// ===============================
+// ANAM BRAIN
+// ===============================
+
+function getReply(text) {
+
+  const message =
+    text.toLowerCase().trim();
+
+
+  // Calculator
+  const math =
+    calculate(message);
+
+  if (math !== null) {
+    return math;
+  }
+
+
+  // Hello
+  if (
+    message.includes("hello") ||
+    message.includes("hi") ||
+    message.includes("hii") ||
+    message.includes("hey") ||
+    message.includes("namaste") ||
+    message.includes("नमस्ते")
+  ) {
+
+    return "Hello! 👋 Main Anam AI hoon. Aap mujhse kya poochna chahte hain?";
+
+  }
+
+
+  // Name
+  if (
+    message.includes("tumhara naam") ||
+    message.includes("naam kya hai") ||
+    message.includes("your name")
+  ) {
+
+    return "Mera naam Anam AI hai. 🤖";
+
+  }
+
+
+  // Who
+  if (
+    message.includes("tum kaun ho") ||
+    message.includes("kaun ho") ||
+    message.includes("who are you")
+  ) {
+
+    return "Main Anam AI hoon, aapka personal AI assistant.";
+
+  }
+
+
+  // How are you
+  if (
+    message.includes("kaise ho") ||
+    message.includes("how are you")
+  ) {
+
+    return "Main bilkul ready hoon! 😄 Aap batao, main aapki kya help karun?";
+
+  }
+
+
+  // Time
+  if (
+    message.includes("time kya") ||
+    message.includes("kitne baje") ||
+    message.includes("samay kya")
+  ) {
+
+    const now =
+      new Date();
+
+    const time =
+      now.toLocaleTimeString(
+        "en-IN",
+        {
+          hour: "numeric",
+          minute: "2-digit"
+        }
+      );
+
+    return "🕐 Abhi time " + time + " hai.";
+
+  }
+
+
+  // Date
+  if (
+    message.includes("aaj ki date") ||
+    message.includes("aaj kya date") ||
+    message.includes("date kya hai") ||
+    message.includes("today")
+  ) {
+
+    const now =
+      new Date();
+
+    const date =
+      now.toLocaleDateString(
+        "en-IN",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric"
+        }
+      );
+
+    return "📅 Aaj ki date " + date + " hai.";
+
+  }
+
+
+  // Thanks
+  if (
+    message.includes("thank you") ||
+    message.includes("thanks") ||
+    message.includes("shukriya")
+  ) {
+
+    return "You're welcome! 😊";
+
+  }
+
+
+  // Bye
+  if (
+    message === "bye" ||
+    message.includes("goodbye")
+  ) {
+
+    return "Bye! 👋 Jab bhi zarurat ho, Anam AI ko bula lena.";
+
+  }
+
+
+  // Study
+  if (
+    message.includes("padhai") ||
+    message.includes("study") ||
+    message.includes("homework")
+  ) {
+
+    return "📚 Padhai ke liye main aapko topic ko simple steps mein samajhne aur revise karne mein help kar sakta hoon.";
+
+  }
+
+
+  // Default
+  return "Maine aapki baat samjhi: " +
+    text +
+    ". Is sawaal ka advanced AI answer dene ke liye mujhe actual AI model se connect karna hoga.";
+
+}
+
+
+// ===============================
+// SEND MESSAGE
+// ===============================
+
+function sendMessage() {
+
+  const text =
+    input.value.trim();
+
+  if (text === "") {
+    return;
+  }
+
+  addMessage(
+    text,
+    "user"
+  );
+
+  input.value = "";
+
+  setTimeout(function() {
+
+    const reply =
+      getReply(text);
+
+    addMessage(
+      reply,
+      "anam"
+    );
+
+    speak(reply);
+
+  }, 300);
+
+}
+
+
+send.addEventListener(
+  "click",
+  sendMessage
+);
+
+
+input.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (event.key === "Enter") {
+
+      event.preventDefault();
+
+      sendMessage();
+
+    }
+
+  }
+);
+
+
+// ===============================
+// VOICE INPUT
+// ===============================
+
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+let recognition = null;
+
+let listening = false;
+
+
+if (SpeechRecognition) {
+
+  recognition =
+    new SpeechRecognition();
+
+  recognition.lang =
+    "hi-IN";
+
+  recognition.continuous =
+    false;
+
+  recognition.interimResults =
+    false;
+
+  recognition.maxAlternatives =
+    1;
+
+
+  recognition.onstart =
+    function() {
+
+      listening = true;
+
+      mic.classList.add(
+        "listening"
+      );
+
+      mic.innerText =
+        "🔴";
+
+      status.innerText =
+        "🎧 Anam AI sun raha hai... Bolo!";
+
+    };
+
+
+  recognition.onresult =
+    function(event) {
+
+      if (
+        event.results &&
+        event.results.length > 0
+      ) {
+
+        const text =
+          event.results[0][0]
+          .transcript;
+
+        input.value =
+          text;
+
+        sendMessage();
+
+      }
+
+    };
+
+
+  recognition.onerror =
+    function(event) {
+
+      console.log(
+        "Voice error:",
+        event.error
+      );
+
+      listening = false;
+
+      mic.classList.remove(
+        "listening"
+      );
+
+      mic.innerText =
+        "🎙️";
+
+      if (
+        event.error ===
+        "not-allowed"
+      ) {
+
+        status.innerText =
+          "❌ Microphone permission allow karo.";
+
+      }
+
+      else if (
+        event.error ===
+        "no-speech"
+      ) {
+
+        status.innerText =
+          "❌ Kuch sunai nahi diya. Dobara bolo.";
+
+      }
+
+      else if (
+        event.error ===
+        "aborted"
+      ) {
+
+        status.innerText =
+          "⚠️ Voice ruk gayi. Dobara mic dabao.";
+
+      }
+
+      else {
+
+        status.innerText =
+          "❌ Voice error: " +
+          event.error;
+
+      }
+
+    };
+
+
+  recognition.onend =
+    function() {
+
+      listening = false;
+
+      mic.classList.remove(
+        "listening"
+      );
+
+      mic.innerText =
+        "🎙️";
+
+      if (
+        status.innerText ===
+        "🎧 Anam AI sun raha hai... Bolo!"
+      ) {
+
+        status.innerText =
+          "Microphone dabakar dobara bolo";
+
+      }
+
+    };
+
+}
+
+
+// ===============================
+// MIC BUTTON
+// ===============================
+
+mic.addEventListener(
+  "click",
+  function() {
+
+    if (!recognition) {
+
+      status.innerText =
+        "❌ Is browser mein voice recognition available nahi hai.";
+
+      return;
+
+    }
+
+    if (listening) {
+      return;
+    }
+
+    try {
+
+      status.innerText =
+        "⏳ Microphone start ho raha hai...";
+
+      recognition.start();
+
+    }
+
+    catch (error) {
+
+      console.log(
+        "Mic start error:",
+        error
+      );
+
+      status.innerText =
+        "⚠️ Mic start nahi hua. Dobara dabao.";
+
+      listening = false;
+
+    }
+
+  }
+);
+
+</script>
+
+</body>
+</html>
