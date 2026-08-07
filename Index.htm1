@@ -1,0 +1,404 @@
+<!DOCTYPE html><html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>Anam AI</title>  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101010;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      padding: 25px 18px;
+    }
+
+    .title {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .title h1 {
+      font-size: 38px;
+      margin: 0;
+      letter-spacing: 2px;
+    }
+
+    .title p {
+      color: #aaa;
+      margin-top: 8px;
+    }
+
+    #chat {
+      margin-top: 30px;
+      min-height: 300px;
+      max-height: 55vh;
+      padding: 15px;
+      border-radius: 18px;
+      background: #1b1b1b;
+      overflow-y: auto;
+    }
+
+    .message {
+      padding: 12px 15px;
+      margin: 10px 0;
+      border-radius: 15px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .anam {
+      background: #292929;
+    }
+
+    .user {
+      background: #3b3b3b;
+      text-align: right;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    #textInput {
+      flex: 1;
+      min-width: 0;
+      padding: 15px;
+      border: none;
+      outline: none;
+      border-radius: 15px;
+      background: #222;
+      color: white;
+      font-size: 16px;
+    }
+
+    #send {
+      width: 55px;
+      border: none;
+      border-radius: 15px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    #mic {
+      display: block;
+      margin: 22px auto 0;
+      width: 75px;
+      height: 75px;
+      border: none;
+      border-radius: 50%;
+      font-size: 32px;
+      cursor: pointer;
+    }
+
+    #mic.listening {
+      transform: scale(1.08);
+    }
+
+    #status {
+      text-align: center;
+      color: #aaa;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+  </style></head><body>  <div class="app"><div class="title">
+  <h1>ANAM AI</h1>
+  <p>Your personal AI assistant</p>
+</div>
+
+<div id="chat">
+
+  <div class="message anam">
+    👋 Hello! Main Anam AI hoon.<br>
+    Mujhse baat karo.
+  </div>
+
+</div>
+
+<div class="controls">
+
+  <input
+    id="textInput"
+    type="text"
+    placeholder="Kuch likho..."
+    autocomplete="off"
+  >
+
+  <button id="send" type="button">➤</button>
+
+</div>
+
+<button id="mic" type="button">🎙️</button>
+
+<div id="status">
+  Microphone dabakar bolo
+</div>
+
+  </div><script>
+
+const chat = document.getElementById("chat");
+const input = document.getElementById("textInput");
+const send = document.getElementById("send");
+const mic = document.getElementById("mic");
+const status = document.getElementById("status");
+
+
+// =============================
+// CHAT
+// =============================
+
+function addMessage(text, type) {
+
+  const message = document.createElement("div");
+
+  message.className = "message " + type;
+
+  message.innerText = text;
+
+  chat.appendChild(message);
+
+  chat.scrollTop = chat.scrollHeight;
+}
+
+
+function sendMessage() {
+
+  const text = input.value.trim();
+
+  if (text === "") {
+    return;
+  }
+
+  addMessage(text, "user");
+
+  input.value = "";
+
+  setTimeout(function() {
+
+    addMessage(
+      "🤖 Main Anam AI hoon. Abhi mera AI brain connect nahi hua hai. Agle step mein hum mujhe intelligent banayenge.",
+      "anam"
+    );
+
+  }, 500);
+}
+
+
+send.addEventListener("click", sendMessage);
+
+
+input.addEventListener("keydown", function(event) {
+
+  if (event.key === "Enter") {
+
+    event.preventDefault();
+
+    sendMessage();
+
+  }
+
+});
+
+
+// =============================
+// VOICE
+// =============================
+
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
+
+let recognition = null;
+let listening = false;
+
+
+// Browser support check
+if (!SpeechRecognition) {
+
+  status.innerText =
+    "⚠️ Is browser mein voice feature available nahi hai.";
+
+} else {
+
+  recognition = new SpeechRecognition();
+
+  recognition.lang = "hi-IN";
+
+  recognition.continuous = false;
+
+  recognition.interimResults = false;
+
+  recognition.maxAlternatives = 1;
+
+
+  recognition.onstart = function() {
+
+    listening = true;
+
+    mic.classList.add("listening");
+
+    mic.innerText = "🔴";
+
+    status.innerText =
+      "🎧 Anam AI sun raha hai... Bolo!";
+
+  };
+
+
+  recognition.onresult = function(event) {
+
+    if (
+      event.results &&
+      event.results.length > 0
+    ) {
+
+      const text =
+        event.results[0][0].transcript;
+
+      input.value = text;
+
+      status.innerText =
+        "✅ Maine sun liya.";
+
+      sendMessage();
+
+    }
+
+  };
+
+
+  recognition.onerror = function(event) {
+
+    console.log(
+      "Speech recognition error:",
+      event.error
+    );
+
+    listening = false;
+
+    mic.classList.remove("listening");
+
+    mic.innerText = "🎙️";
+
+
+    if (event.error === "not-allowed") {
+
+      status.innerText =
+        "❌ Microphone permission allow karo.";
+
+    }
+
+    else if (event.error === "no-speech") {
+
+      status.innerText =
+        "❌ Kuch sunai nahi diya. Dobara bolo.";
+
+    }
+
+    else if (event.error === "aborted") {
+
+      status.innerText =
+        "⚠️ Voice ruk gayi. Mic dobara dabakar bolo.";
+
+    }
+
+    else if (event.error === "network") {
+
+      status.innerText =
+        "❌ Voice service/network problem hai.";
+
+    }
+
+    else {
+
+      status.innerText =
+        "❌ Voice error: " + event.error;
+
+    }
+
+  };
+
+
+  recognition.onend = function() {
+
+    listening = false;
+
+    mic.classList.remove("listening");
+
+    mic.innerText = "🎙️";
+
+    if (
+      status.innerText ===
+      "🎧 Anam AI sun raha hai... Bolo!"
+    ) {
+
+      status.innerText =
+        "Microphone dabakar dobara bolo";
+
+    }
+
+  };
+
+}
+
+
+// =============================
+// MIC BUTTON
+// =============================
+
+mic.addEventListener("click", function() {
+
+  if (!recognition) {
+
+    status.innerText =
+      "❌ Is browser mein voice recognition available nahi hai.";
+
+    return;
+
+  }
+
+
+  if (listening) {
+
+    return;
+
+  }
+
+
+  try {
+
+    status.innerText =
+      "⏳ Microphone start ho raha hai...";
+
+    recognition.start();
+
+  }
+
+  catch (error) {
+
+    console.log(
+      "Recognition start error:",
+      error
+    );
+
+    status.innerText =
+      "⚠️ Mic start nahi hua. 1 second baad dobara dabao.";
+
+    listening = false;
+
+  }
+
+});
+
+</script></body>
+</html>
