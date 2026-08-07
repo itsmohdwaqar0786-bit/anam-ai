@@ -201,8 +201,12 @@ function sendMessage() {
   setTimeout(function() {
 
     addMessage(
-      "🤖 Main Anam AI hoon. Abhi mera AI brain connect nahi hua hai. Agle step mein hum mujhe intelligent banayenge.",
-      "anam"
+      const reply =
+  "🤖 Main Anam AI hoon. Tumne jo kaha maine sun liya.";
+
+addMessage(reply, "anam");
+
+speak(reply);
     );
 
   }, 500);
