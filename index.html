@@ -170,7 +170,22 @@ function addMessage(text, type) {
   chat.scrollTop = chat.scrollHeight;
 }
 
+function speak(text) {
 
+  if (!("speechSynthesis" in window)) {
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const voice = new SpeechSynthesisUtterance(text);
+
+  voice.lang = "hi-IN";
+  voice.rate = 0.95;
+  voice.pitch = 1;
+
+  window.speechSynthesis.speak(voice);
+}
 function sendMessage() {
 
   const text = input.value.trim();
